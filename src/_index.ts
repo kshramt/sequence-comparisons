@@ -9,6 +9,101 @@ export type TOp =
   | typeof DELETE_OP
   | typeof INSERT_OP;
 
+export type TCompresedOp = string | number;
+
+/**
+ * This class applies the operations returned from `compressOpsForString` to an array of strings.
+ */
+export class ApplyCompressedOpsForString {
+  #nXs: number;
+  xs: string[];
+  ys: string[];
+  constructor(xs: string[]) {
+    this.#nXs = xs.length;
+    this.xs = xs;
+    this.ys = [];
+  }
+  apply = (ops: TCompresedOp[]) => {
+    let ix = -1;
+    let iy = -1;
+    for (const op of ops) {
+      switch (typeof op) {
+        case "number":
+          if (op < 0) {
+            ix -= op;
+          } else {
+            for (let i = 0; i < op; ++i) {
+              this.ys[++iy] = this.xs[++ix];
+            }
+          }
+          break;
+        case "string":
+          for (const char of Array.from(op)) {
+            this.ys[++iy] = char;
+          }
+      }
+    }
+    [this.xs, this.ys] = [this.ys, this.xs];
+    this.#nXs = iy + 1;
+    return this;
+  };
+  get = () => {
+    return this.xs.slice(0, this.#nXs).join("");
+  };
+}
+
+/**
+ * This function compresses the operations returned from `diffWu` into a more compact form.
+ *
+ * @param ops The array of operations returned from `diffWu`.
+ * @param xs The source array of strings passed to `diffWu`.
+ * @param ys The destination array of strings passed to `diffWu`.
+ * @returns An array of operations that is more compact than the array returned from `diffWu`. The array is a mix of strings and numbers. A negative number `n` indicates that the next `-n` elements in `xs` are to be deleted. A positive number `n` indicates that the next `n` elements in both `xs` and `ys` are to be kept. A string elemnt indicates that the element is to be inserted.
+ */
+export const compressOpsForString = (ops: TOp[], ys: string[]) => {
+  const res: TCompresedOp[] = [];
+  let iy = -1;
+  let nDelete = 0;
+  let nKeep = 0;
+  const insertedElements: string[] = [];
+  let prevOp = SENTINEL_OP;
+  loop: for (const op of ops) {
+    if (op !== prevOp && prevOp !== SENTINEL_OP) {
+      switch (prevOp) {
+        case DELETE_OP:
+          res.push(-nDelete);
+          nDelete = 0;
+          break;
+        case KEEP_OP:
+          res.push(nKeep);
+          nKeep = 0;
+          break;
+        case INSERT_OP:
+          res.push(insertedElements.join(""));
+          insertedElements.length = 0;
+          break;
+      }
+    }
+    switch (op) {
+      case KEEP_OP:
+        ++iy;
+        ++nKeep;
+        break;
+      case DELETE_OP:
+        ++nDelete;
+        break;
+      case INSERT_OP:
+        ++iy;
+        insertedElements.push(ys[iy]);
+        break;
+      case SENTINEL_OP:
+        break loop;
+    }
+    prevOp = op;
+  }
+  return res;
+};
+
 /**
  * This class holds working arrays and calls `diffWu` with the arrays to minimize memory allocations.
  *
@@ -24,24 +119,36 @@ export class DiffWu {
     this.#bps = new Array(3);
   }
 
-  call = <T>(
-    xs: T[],
-    ys: T[],
-    isEqual: typeof _isEqual = _isEqual,
-  ) => {
+  /**
+   * Please see the documentation for `diffWu`.
+   */
+  call = <T>(xs: T[], ys: T[], isEqual: typeof _isEqual = _isEqual) => {
     const nx = xs.length;
     const ny = ys.length;
     const opsLength = nx + ny + 1;
-    if(this.#ops.length < opsLength) {
+    if (this.#ops.length < opsLength) {
       this.#ops.length = opsLength;
     }
     this.#ops.fill(SENTINEL_OP, 0, opsLength);
     const fpsLength = nx + ny + 3;
-    if(this.#fps.length < fpsLength) {
+    if (this.#fps.length < fpsLength) {
       this.#fps.length = fpsLength;
       this.#bps.length = fpsLength;
     }
-    _diffWu(this.#ops, 0, this.#fps, this.#bps, xs, 0, nx, ys, 0, ny, false, isEqual);
+    _diffWu(
+      this.#ops,
+      0,
+      this.#fps,
+      this.#bps,
+      xs,
+      0,
+      nx,
+      ys,
+      0,
+      ny,
+      false,
+      isEqual,
+    );
     return this.#ops;
   };
 }
@@ -54,6 +161,7 @@ export class DiffWu {
  *
  * @param xs - The initial or source array.
  * @param ys - The final or destination array.
+ * @returns An array of operations that can be used to transform `xs` into `ys`. The returned array is guaranteed to end with a `SENTINEL_OP` operation.
  */
 export const diffWu = <T>(
   xs: T[],
@@ -62,7 +170,7 @@ export const diffWu = <T>(
 ): TOp[] => {
   const nx = xs.length;
   const ny = ys.length;
-  const ops = new Array(nx + ny).fill(SENTINEL_OP);
+  const ops = new Array(nx + ny + 1).fill(SENTINEL_OP);
   const fps = new Array<number>(nx + ny + 3);
   const bps = new Array<number>(nx + ny + 3);
   _diffWu(ops, 0, fps, bps, xs, 0, nx, ys, 0, ny, false, isEqual);
