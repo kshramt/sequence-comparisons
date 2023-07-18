@@ -41,8 +41,5 @@
   },
   "prettier": {
     "trailingComma": "all"
-  },
-  "dependencies": {
-    "assert": "^2.0.0"
   }
 }

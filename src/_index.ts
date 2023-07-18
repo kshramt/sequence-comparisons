@@ -1,5 +1,3 @@
-import assert from "assert";
-
 export const SENTINEL_OP = 0;
 export const KEEP_OP = 1;
 export const DELETE_OP = 2;
@@ -30,12 +28,7 @@ export const diffWu = <T>(
   const ops = new Array(nx + ny).fill(SENTINEL_OP);
   const fps = new Array<number>(nx + ny + 3);
   const bps = new Array<number>(nx + ny + 3);
-  const isLandscape = nx <= ny;
-  if (isLandscape) {
-    _diffWu(ops, 0, fps, bps, xs, 0, nx, ys, 0, ny, isLandscape, isEqual);
-  } else {
-    _diffWu(ops, 0, fps, bps, ys, 0, ny, xs, 0, nx, isLandscape, isEqual);
-  }
+  _diffWu(ops, 0, fps, bps, xs, 0, nx, ys, 0, ny, false, isEqual);
   return ops;
 };
 
@@ -50,14 +43,19 @@ function _diffWu<T>(
   ys: T[],
   iy1: number,
   iy2: number,
-  isLandscape: boolean,
+  isSwapped: boolean,
   isEqual: typeof _isEqual,
 ): number {
+  if (iy2 - iy1 < ix2 - ix1) {
+    [xs, ys] = [ys, xs];
+    [ix1, iy1] = [iy1, ix1];
+    [ix2, iy2] = [iy2, ix2];
+    isSwapped = !isSwapped;
+  }
   const nx = ix2 - ix1;
   const ny = iy2 - iy1;
-  assert(nx <= ny);
-  const deleteOp = isLandscape ? DELETE_OP : INSERT_OP;
-  const insertOp = isLandscape ? INSERT_OP : DELETE_OP;
+  const deleteOp = isSwapped ? INSERT_OP : DELETE_OP;
+  const insertOp = isSwapped ? DELETE_OP : INSERT_OP;
   if (ny === 0) {
     return 0;
   }
@@ -213,69 +211,35 @@ function _diffWu<T>(
     }
   }
 
-  const isCurrentLandscape = mx - ix1 <= my - iy1;
-  const nOpsTL = isCurrentLandscape
-    ? _diffWu(
-        ops,
-        iop1,
-        fps,
-        bps,
-        xs,
-        ix1,
-        mx + 1,
-        ys,
-        iy1,
-        my + 1,
-        isCurrentLandscape === isLandscape,
-        isEqual,
-      )
-    : _diffWu(
-        ops,
-        iop1,
-        fps,
-        bps,
-        ys,
-        iy1,
-        my + 1,
-        xs,
-        ix1,
-        mx + 1,
-        isCurrentLandscape === isLandscape,
-        isEqual,
-      );
-  {
-    const isCurrentLandscape = ix2 - mx <= iy2 - my;
-    const nOpsBR = isCurrentLandscape
-      ? _diffWu(
-          ops,
-          iop1 + nOpsTL,
-          fps,
-          bps,
-          xs,
-          mx + 1,
-          ix2,
-          ys,
-          my + 1,
-          iy2,
-          isCurrentLandscape === isLandscape,
-          isEqual,
-        )
-      : _diffWu(
-          ops,
-          iop1 + nOpsTL,
-          fps,
-          bps,
-          ys,
-          my + 1,
-          iy2,
-          xs,
-          mx + 1,
-          ix2,
-          isCurrentLandscape === isLandscape,
-          isEqual,
-        );
-    return nOpsTL + nOpsBR;
-  }
+  const nOpsTopLeft = _diffWu(
+    ops,
+    iop1,
+    fps,
+    bps,
+    xs,
+    ix1,
+    mx + 1,
+    ys,
+    iy1,
+    my + 1,
+    isSwapped,
+    isEqual,
+  );
+  const nOpsBottomRight = _diffWu(
+    ops,
+    iop1 + nOpsTopLeft,
+    fps,
+    bps,
+    xs,
+    mx + 1,
+    ix2,
+    ys,
+    my + 1,
+    iy2,
+    isSwapped,
+    isEqual,
+  );
+  return nOpsTopLeft + nOpsBottomRight;
 }
 
 export const forwardBelowDelta = <T>(
