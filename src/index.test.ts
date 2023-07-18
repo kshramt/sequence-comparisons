@@ -219,6 +219,7 @@ vt.describe("diffWu", () => {
     const actual = T.diffWu(xs, ys);
     vt.expect(actual).toStrictEqual(expected);
   });
+  const diffWu = new T.DiffWu();
   for (const vocabSize of [
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 80, 160, 320, 640, 1280,
   ] as const) {
@@ -236,8 +237,12 @@ vt.describe("diffWu", () => {
           ),
         },
       ] as const) {
-        test.prop([prop])(desc, ([src, dst]) => {
+        test.prop([prop])(`diffWu ${desc}`, ([src, dst]) => {
           const ops = T.diffWu(src, dst);
+          checkOps(ops, src, dst);
+        });
+        test.prop([prop])(`DiffWu ${desc}`, ([src, dst]) => {
+          const ops = diffWu.call(src, dst);
           checkOps(ops, src, dst);
         });
       }

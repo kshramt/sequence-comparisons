@@ -10,13 +10,50 @@ export type TOp =
   | typeof INSERT_OP;
 
 /**
+ * This class holds working arrays and calls `diffWu` with the arrays to minimize memory allocations.
+ *
+ * Please see the documentation for `diffWu` for more information.
+ */
+export class DiffWu {
+  #ops: TOp[];
+  #fps: number[];
+  #bps: number[];
+  constructor() {
+    this.#ops = new Array(1).fill(SENTINEL_OP);
+    this.#fps = new Array(3);
+    this.#bps = new Array(3);
+  }
+
+  call = <T>(
+    xs: T[],
+    ys: T[],
+    isEqual: typeof _isEqual = _isEqual,
+  ) => {
+    const nx = xs.length;
+    const ny = ys.length;
+    const opsLength = nx + ny + 1;
+    if(this.#ops.length < opsLength) {
+      this.#ops.length = opsLength;
+    }
+    this.#ops.fill(SENTINEL_OP, 0, opsLength);
+    const fpsLength = nx + ny + 3;
+    if(this.#fps.length < fpsLength) {
+      this.#fps.length = fpsLength;
+      this.#bps.length = fpsLength;
+    }
+    _diffWu(this.#ops, 0, this.#fps, this.#bps, xs, 0, nx, ys, 0, ny, false, isEqual);
+    return this.#ops;
+  };
+}
+
+/**
  * This function ascertains the disparities between two arrays.
  *
  * The method of determining the differences leverages a linear-space refinement (as discussed in "A linear space algorithm for computing maximal common subsequences", Hirshberg, 1975) of the approach described in "An O(NP) sequence comparison algorithm" by Wu et al. (1989).
  * The space complexity of this operation is O(N), while the worst-case time complexity is O(NP), wherein N represents the length of the larger array of the two, and P denotes the number of deletion operations necessitated to morph `a` into `b`.
  *
- * @param a - The initial or source array.
- * @param b - The final or destination array.
+ * @param xs - The initial or source array.
+ * @param ys - The final or destination array.
  */
 export const diffWu = <T>(
   xs: T[],
