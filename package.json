@@ -13,7 +13,7 @@
     "url": "git+https://github.com/kshramt/sequence-comparisons.git"
   },
   "author": "kshramt",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/kshramt/sequence-comparisons/issues"
   },
