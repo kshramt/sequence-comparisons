@@ -7,8 +7,20 @@ vt.describe("string", () => {
   const diffWu = new T.DiffWu();
   const applyCompressedOpsForString = new T.ApplyCompressedOpsForString([]);
   const seqLen = 20;
-  for (const maxLength of [
-    2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 40, 80, 160, 320, 640, 1280,
+  for (const [minLength, maxLength] of [
+    [0, 2],
+    [0, 3],
+    [0, 4],
+    [0, 5],
+    [0, 6],
+    [0, 7],
+    [0, 8],
+    [0, 9],
+    [0, 10],
+    [11, 20],
+    [21, 40],
+    [41, 80],
+    [81, 160],
   ] as const) {
     for (const str of [
       fc.hexaString,
@@ -19,7 +31,7 @@ vt.describe("string", () => {
       fc.fullUnicodeString,
     ] as const) {
       const prop = fc
-        .array(str({ maxLength }), {
+        .array(str({ minLength, maxLength }).noBias(), {
           minLength: seqLen,
           maxLength: seqLen,
         })
@@ -33,22 +45,25 @@ vt.describe("string", () => {
           }
           return fc.tuple(...res);
         });
-      test.prop([prop])(`maxLength=${maxLength}, str=${str}`, (texts) => {
-        const opss = [];
-        for (let i = 0; i + 1 < texts.length; i++) {
-          const xs = Array.from(texts[i]);
-          const ys = Array.from(texts[i + 1]);
-          const ops = diffWu.call(xs, ys);
-          checkOps(ops, xs, ys);
-          opss.push(T.compressOpsForString(ops, ys));
-        }
-        const reconstructed = [texts[0]];
-        applyCompressedOpsForString.xs = Array.from(texts[0]);
-        for (const ops of opss) {
-          reconstructed.push(applyCompressedOpsForString.apply(ops).get());
-        }
-        vt.expect(reconstructed).toStrictEqual(texts);
-      });
+      test.prop([prop])(
+        `minLength=${minLength} maxLength=${maxLength}, str=${str}`,
+        (texts) => {
+          const opss = [];
+          for (let i = 0; i + 1 < texts.length; i++) {
+            const xs = Array.from(texts[i]);
+            const ys = Array.from(texts[i + 1]);
+            const ops = diffWu.call(xs, ys);
+            checkOps(ops, xs, ys);
+            opss.push(T.compressOpsForString(ops, ys));
+          }
+          const reconstructed = [texts[0]];
+          applyCompressedOpsForString.xs = Array.from(texts[0]);
+          for (const ops of opss) {
+            reconstructed.push(applyCompressedOpsForString.apply(ops).get());
+          }
+          vt.expect(reconstructed).toStrictEqual(texts);
+        },
+      );
     }
   }
 });
