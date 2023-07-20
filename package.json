@@ -1,9 +1,10 @@
 {
   "name": "@kshramt/sequence-comparisons",
-  "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "version": "0.1.0",
+  "description": "This package provides a linear-space refinement of the algorithm described in \"An O(NP) sequence comparison algorithm\" by Wu et al. (1989).",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc --project tsconfig.build.json",
     "lint": "eslint",

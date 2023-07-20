@@ -1,7 +1,7 @@
 import * as vt from "vitest";
 import { fc, test } from "@fast-check/vitest";
 
-import * as T from "./index";
+import * as T from "./index.js";
 
 fc.configureGlobal({ numRuns: process.env.CI ? 1000 : 100 });
 
