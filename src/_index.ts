@@ -12,7 +12,7 @@ export type TOp =
 export type TCompresedOp = string | number;
 
 /**
- * This class applies the operations returned from `compressOpsForString` to an array of strings.
+ * This class, `ApplyCompressedOpsForString`, is designed to execute the operations produced by the `compressOpsForString` function on a given array of strings.
  */
 export class ApplyCompressedOpsForString {
   #nXs: number;
@@ -53,12 +53,11 @@ export class ApplyCompressedOpsForString {
 }
 
 /**
- * This function compresses the operations returned from `diffWu` into a more compact form.
+ * This function refines the operations returned from `diffWu` into a more compact format.
  *
- * @param ops The array of operations returned from `diffWu`.
- * @param xs The source array of strings passed to `diffWu`.
- * @param ys The destination array of strings passed to `diffWu`.
- * @returns An array of operations that is more compact than the array returned from `diffWu`. The array is a mix of strings and numbers. A negative number `n` indicates that the next `-n` elements in `xs` are to be deleted. A positive number `n` indicates that the next `n` elements in both `xs` and `ys` are to be kept. A string elemnt indicates that the element is to be inserted.
+ * @param ops The array of operations outputted by the `diffWu` function.
+ * @param ys The final or destination array of strings that was input to the `diffWu` function.
+ * @returns A compact array of operations. This array combines strings and numbers. A negative number `n` signifies that the subsequent `-n` elements in `xs` are to be removed. A positive number `n` signifies that the subsequent `n` elements in both `xs` should remain unchanged. A string element denotes that the corresponding element should be inserted into the array.
  */
 export const compressOpsForString = (ops: TOp[], ys: string[]) => {
   const res: TCompresedOp[] = [];
@@ -105,14 +104,15 @@ export const compressOpsForString = (ops: TOp[], ys: string[]) => {
 };
 
 /**
- * This class holds working arrays and calls `diffWu` with the arrays to minimize memory allocations.
+ * This class, `DiffWu`, encapsulates working arrays and invokes the `diffWu` function with these arrays to optimize memory usage.
  *
- * Please see the documentation for `diffWu` for more information.
+ * Please see `diffWu` for more information.
  */
 export class DiffWu {
   #ops: TOp[];
   #fps: number[];
   #bps: number[];
+
   constructor() {
     this.#ops = new Array(1).fill(SENTINEL_OP);
     this.#fps = new Array(3);
@@ -120,7 +120,9 @@ export class DiffWu {
   }
 
   /**
-   * Please see the documentation for `diffWu`.
+   * This method, `call`, invokes the `diffWu` function with the specified parameters.
+   *
+   * Please see `diffWu` for more information.
    */
   call = <T>(xs: T[], ys: T[], isEqual: typeof _isEqual = _isEqual) => {
     const nx = xs.length;
@@ -154,14 +156,15 @@ export class DiffWu {
 }
 
 /**
- * This function ascertains the disparities between two arrays.
+ * This function calculates the differences between two arrays using an optimized algorithm.
  *
- * The method of determining the differences leverages a linear-space refinement (as discussed in "A linear space algorithm for computing maximal common subsequences", Hirshberg, 1975) of the approach described in "An O(NP) sequence comparison algorithm" by Wu et al. (1989).
- * The space complexity of this operation is O(N), while the worst-case time complexity is O(NP), wherein N represents the length of the larger array of the two, and P denotes the number of deletion operations necessitated to morph `a` into `b`.
+ * The difference calculation is based on a linear-space refinement, as outlined in the paper "A linear space algorithm for computing maximal common subsequences" by Hirshberg (1975), of "An O(NP) sequence comparison algorithm" by Wu et al. (1989).
+ * The space complexity of this operation is O(N), signifying that the memory usage is proportional to the length of the larger array.
+ * The worst-case time complexity is O(NP), indicating that the time taken is proportional to the product of the length of the larger array (N) and the number of deletion (insertion if `xs` is longer than `ys`) operations (P) required to transform the source array `xs` into the destination array `ys`.
  *
- * @param xs - The initial or source array.
- * @param ys - The final or destination array.
- * @returns An array of operations that can be used to transform `xs` into `ys`. The returned array is guaranteed to end with a `SENTINEL_OP` operation.
+ * @param xs - The source array, which is the initial state before the transformation.
+ * @param ys - The destination array, which is the final state after the transformation.
+ * @returns An array of operations that are needed to convert `xs` into `ys`. The returned array always ends with a `SENTINEL_OP` operation, serving as a marker for the end of operations.
  */
 export const diffWu = <T>(
   xs: T[],
