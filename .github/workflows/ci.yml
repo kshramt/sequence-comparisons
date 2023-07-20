@@ -18,7 +18,7 @@ jobs:
       - run: cp package.json dist/
       - run: cd dist/ && npm pack
         if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-      - run: cd dist/ && npm publish --provenance --access publish
+      - run: cd dist/ && npm publish --provenance --access public
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
