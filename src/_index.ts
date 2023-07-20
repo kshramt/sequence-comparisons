@@ -258,104 +258,71 @@ function _diffWu<T>(
   }
   bps.fill(iy2, ny + 1);
 
-  // P == 0
-  forwardBelowDelta(fps, bps, 0, xs, ix1, ix2, ys, iy1, iy2, isEqual);
-  forwardAtDelta(fps, bps, xs, ix1, ix2, ys, iy1, iy2, isEqual);
   const delta = ny - nx;
   const offset = nx + 1;
-  if (iy2 - 1 === fps[offset + delta]) {
-    let iop = iop1 - 1;
-    let iy = iy1 - 1;
-    for (let k = 0; k < delta; ++k) {
-      while (iy + 1 < fps[offset + k] + 1) {
-        ++iy;
-        ++iop;
-        ops[iop] = KEEP_OP;
-      }
-      ++iy;
-      ++iop;
-      ops[iop] = insertOp;
-    }
-    while (iy + 1 < iy2) {
-      ++iy;
-      ++iop;
-      ops[iop] = KEEP_OP;
-    }
-    return iop - iop1 + 1;
-  }
 
   // Run the backward pass with P == 0.
   let mx: number;
   let my: number;
-  let p = 0;
+  let p = -1;
   // eslint-disable-next-line no-constant-condition
-  while (true) {
-    [mx, my] = backwardAtDelta(fps, bps, xs, ix1, ix2, ys, iy1, iy2, isEqual);
-    if (ix1 - 2 < mx) {
-      break;
-    }
-    [mx, my] = backwardBelowDelta(
-      fps,
-      bps,
-      xs,
-      ix1,
-      ix2,
-      ys,
-      iy1,
-      iy2,
-      isEqual,
-    );
-    if (ix1 - 2 < mx) {
-      break;
-    }
-    [mx, my] = backwardAboveDelta(
-      fps,
-      bps,
-      xs,
-      ix1,
-      ix2,
-      ys,
-      iy1,
-      iy2,
-      isEqual,
-    );
-    if (ix1 - 2 < mx) {
-      break;
-    }
+  p_loop: while (true) {
     ++p;
-    [mx, my] = forwardBelowDelta(
-      fps,
-      bps,
-      p,
-      xs,
-      ix1,
-      ix2,
-      ys,
-      iy1,
-      iy2,
-      isEqual,
-    );
-    if (ix1 - 2 < mx) {
-      break;
+    for (const k of getForwardLoop(delta, p)) {
+      const iy = Math.max(fps[offset + k - 1] + 1, fps[offset + k + 1]);
+      fps[offset + k] = iy;
+      if (bps[offset + k] <= iy) {
+        const ix = iy - iy1 - k + ix1;
+        mx = ix;
+        my = iy;
+        break p_loop;
+      }
+      fps[offset + k] = snakeForward(
+        k,
+        iy,
+        xs,
+        ix1,
+        ix2,
+        ys,
+        iy1,
+        iy2,
+        isEqual,
+      );
     }
-    [mx, my] = forwardAboveDelta(
-      fps,
-      bps,
-      p,
-      xs,
-      ix1,
-      ix2,
-      ys,
-      iy1,
-      iy2,
-      isEqual,
-    );
-    if (ix1 - 2 < mx) {
-      break;
+    if (p === 0 && iy2 - 1 === fps[offset + delta]) {
+      let iop = iop1 - 1;
+      let iy = iy1 - 1;
+      for (let k = 0; k < delta; ++k) {
+        while (iy + 1 < fps[offset + k] + 1) {
+          ++iy;
+          ++iop;
+          ops[iop] = KEEP_OP;
+        }
+        ++iy;
+        ++iop;
+        ops[iop] = insertOp;
+      }
+      while (iy + 1 < iy2) {
+        ++iy;
+        ++iop;
+        ops[iop] = KEEP_OP;
+      }
+      return iop - iop1 + 1;
     }
-    [mx, my] = forwardAtDelta(fps, bps, xs, ix1, ix2, ys, iy1, iy2, isEqual);
-    if (ix1 - 2 < mx) {
-      break;
+
+    for (const k of getBackwardLoop(delta, nx, ny)) {
+      const iy = Math.max(
+        Math.min(bps[offset + k - 1], bps[offset + k + 1] - 1),
+        iy1 - 1,
+      );
+      bps[offset + k] = iy;
+      if (iy <= fps[offset + k]) {
+        const ix = iy - iy1 - k + ix1;
+        mx = ix;
+        my = iy;
+        break p_loop;
+      }
+      bps[offset + k] = snakeBackward(k, iy, xs, ix1, ys, iy1, isEqual);
     }
   }
 
@@ -389,184 +356,6 @@ function _diffWu<T>(
   );
   return nOpsTopLeft + nOpsBottomRight;
 }
-
-export const forwardBelowDelta = <T>(
-  fps: number[],
-  bps: number[],
-  p: number,
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-) => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  for (let k = -p; k < delta; ++k) {
-    const iy = Math.max(fps[offset + k - 1] + 1, fps[offset + k + 1]);
-    fps[offset + k] = iy;
-    if (bps[offset + k] <= iy) {
-      const ix = iy - iy1 - k + ix1;
-      return [ix, iy];
-    }
-    fps[offset + k] = snakeForward(k, iy, xs, ix1, ix2, ys, iy1, iy2, isEqual);
-  }
-  return [ix1 - 2, iy1 - 2];
-};
-
-export const forwardAboveDelta = <T>(
-  fps: number[],
-  bps: number[],
-  p: number,
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-) => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  for (let k = delta + p; delta < k; --k) {
-    const iy = Math.max(fps[offset + k - 1] + 1, fps[offset + k + 1]);
-    fps[offset + k] = iy;
-    if (bps[offset + k] <= iy) {
-      const ix = iy - iy1 - k + ix1;
-      return [ix, iy];
-    }
-    fps[offset + k] = snakeForward(k, iy, xs, ix1, ix2, ys, iy1, iy2, isEqual);
-  }
-  return [ix1 - 2, iy1 - 2];
-};
-export const forwardAtDelta = <T>(
-  fps: number[],
-  bps: number[],
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-) => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  const iy = Math.max(fps[offset + delta - 1] + 1, fps[offset + delta + 1]);
-  fps[offset + delta] = iy;
-  if (bps[offset + delta] <= iy) {
-    const ix = iy - iy1 - delta + ix1;
-    return [ix, iy];
-  }
-  fps[offset + delta] = snakeForward(
-    delta,
-    iy,
-    xs,
-    ix1,
-    ix2,
-    ys,
-    iy1,
-    iy2,
-    isEqual,
-  );
-  return [ix1 - 2, iy1 - 2];
-};
-
-export const backwardBelowDelta = <T>(
-  fps: number[],
-  bps: number[],
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-) => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  for (let k = delta - 1; -nx - 1 < k; --k) {
-    const iy = Math.max(
-      Math.min(bps[offset + k - 1], bps[offset + k + 1] - 1),
-      iy1 - 1,
-    );
-    bps[offset + k] = iy;
-    if (iy <= fps[offset + k]) {
-      const ix = iy - iy1 - k + ix1;
-      return [ix, iy];
-    }
-    bps[offset + k] = snakeBackward(k, iy, xs, ix1, ys, iy1, isEqual);
-  }
-  return [ix1 - 2, iy1 - 2];
-};
-
-export const backwardAboveDelta = <T>(
-  fps: number[],
-  bps: number[],
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-) => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  for (let k = delta + 1; k < ny + 1; ++k) {
-    const iy = Math.max(
-      Math.min(bps[offset + k - 1], bps[offset + k + 1] - 1),
-      iy1 - 1,
-    );
-    bps[offset + k] = iy;
-    if (iy <= fps[offset + k]) {
-      const ix = iy - iy1 - k + ix1;
-      return [ix, iy];
-    }
-    bps[offset + k] = snakeBackward(k, iy, xs, ix1, ys, iy1, isEqual);
-  }
-  return [ix1 - 2, iy1 - 2];
-};
-
-export const backwardAtDelta = <T>(
-  fps: number[],
-  bps: number[],
-  xs: T[],
-  ix1: number,
-  ix2: number,
-  ys: T[],
-  iy1: number,
-  iy2: number,
-  isEqual: typeof _isEqual,
-): [number, number] => {
-  const nx = ix2 - ix1;
-  const ny = iy2 - iy1;
-  const delta = ny - nx;
-  const offset = nx + 1;
-  const iy = Math.max(
-    Math.min(bps[offset + delta - 1], bps[offset + delta + 1] - 1),
-    iy1 - 1,
-  );
-  bps[offset + delta] = iy;
-  if (iy <= fps[offset + delta]) {
-    const ix = iy - iy1 - delta + ix1;
-    return [ix, iy];
-  }
-  bps[offset + delta] = snakeBackward(delta, iy, xs, ix1, ys, iy1, isEqual);
-  return [ix1 - 2, iy1 - 2];
-};
 
 const snakeForward = <T>(
   k: number,
@@ -607,3 +396,29 @@ const snakeBackward = <T>(
 export const _isEqual = <T>(x: T, y: T): boolean => {
   return x === y;
 };
+
+function* getForwardLoop(delta: number, p: number) {
+  // Below delta
+  for (let k = -p; k < delta; ++k) {
+    yield k;
+  }
+  // Above delta
+  for (let k = delta + p; delta < k; --k) {
+    yield k;
+  }
+  // At delta
+  yield delta;
+}
+
+function* getBackwardLoop(delta: number, nx: number, ny: number) {
+  // At delta
+  yield delta;
+  // Below delta
+  for (let k = delta - 1; -nx - 1 < k; --k) {
+    yield k;
+  }
+  // Above delta
+  for (let k = delta + 1; k < ny + 1; ++k) {
+    yield k;
+  }
+}
