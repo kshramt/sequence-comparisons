@@ -246,10 +246,6 @@ function _diffWu<T>(
     }
   }
 
-  // Find the middle point `(mx, my)`.
-
-  // Run the forward pass with P == 0.
-  // If the path is reachable, then set `ops` and return.
   fps.fill(iy1 - 2, 0, nx + ny + 3);
   fps[nx + 1] = iy1 - 1;
 
@@ -261,7 +257,7 @@ function _diffWu<T>(
   const delta = ny - nx;
   const offset = nx + 1;
 
-  // Run the backward pass with P == 0.
+  // Find the middle point `(mx, my)`.
   let mx: number;
   let my: number;
   let p = -1;
@@ -289,6 +285,7 @@ function _diffWu<T>(
         isEqual,
       );
     }
+    // If the forward pass with p === 0 is enough, then return.
     if (p === 0 && iy2 - 1 === fps[offset + delta]) {
       let iop = iop1 - 1;
       let iy = iy1 - 1;
