@@ -9,7 +9,7 @@ export type TOp =
   | typeof DELETE_OP
   | typeof INSERT_OP;
 
-export type TCompresedOp = string | number;
+export type TCompressedOp = string | number;
 
 /**
  * This class, `ApplyCompressedOpsForString`, is designed to execute the operations produced by the `compressOpsForString` function on a given array of strings.
@@ -23,7 +23,7 @@ export class ApplyCompressedOpsForString {
     this.xs = xs;
     this.ys = [];
   }
-  apply = (ops: TCompresedOp[]) => {
+  apply = (ops: TCompressedOp[]) => {
     let ix = -1;
     let iy = -1;
     for (const op of ops) {
@@ -60,7 +60,7 @@ export class ApplyCompressedOpsForString {
  * @returns A compact array of operations. This array combines strings and numbers. A negative number `n` signifies that the subsequent `-n` elements in `xs` are to be removed. A positive number `n` signifies that the subsequent `n` elements in both `xs` should remain unchanged. A string element denotes that the corresponding element should be inserted into the array.
  */
 export const compressOpsForString = (ops: TOp[], ys: string[]) => {
-  const res: TCompresedOp[] = [];
+  const res: TCompressedOp[] = [];
   let iy = -1;
   let nDelete = 0;
   let nKeep = 0;
