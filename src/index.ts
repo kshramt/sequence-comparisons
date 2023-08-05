@@ -9,7 +9,17 @@ export type TOp =
   | typeof DELETE_OP
   | typeof INSERT_OP;
 
+export const isTOp = (x: unknown): x is TOp => {
+  return (
+    x === SENTINEL_OP || x === KEEP_OP || x === DELETE_OP || x === INSERT_OP
+  );
+};
+
 export type TCompressedOp = string | number;
+
+export const isTCompressedOp = (x: unknown): x is TCompressedOp => {
+  return typeof x === "string" || typeof x === "number";
+};
 
 /**
  * This class, `ApplyCompressedOpsForString`, is designed to execute the operations produced by the `compressOpsForString` function on a given array of strings.

@@ -3,6 +3,30 @@ import { fc, test } from "@fast-check/vitest";
 
 import * as T from "./index.js";
 
+test("isTCompressedOp", () => {
+  vt.expect(T.isTCompressedOp(-1)).toStrictEqual(true);
+  vt.expect(T.isTCompressedOp(0)).toStrictEqual(true);
+  vt.expect(T.isTCompressedOp(1)).toStrictEqual(true);
+
+  vt.expect(T.isTCompressedOp("")).toStrictEqual(true);
+
+  vt.expect(T.isTCompressedOp([])).toStrictEqual(false);
+  vt.expect(T.isTCompressedOp({})).toStrictEqual(false);
+});
+
+test("isTOp", () => {
+  vt.expect(T.isTOp(T.KEEP_OP)).toStrictEqual(true);
+  vt.expect(T.isTOp(T.DELETE_OP)).toStrictEqual(true);
+  vt.expect(T.isTOp(T.INSERT_OP)).toStrictEqual(true);
+  vt.expect(T.isTOp(T.SENTINEL_OP)).toStrictEqual(true);
+
+  vt.expect(T.isTOp(-100)).toStrictEqual(false);
+  vt.expect(T.isTOp(100)).toStrictEqual(false);
+  vt.expect(T.isTOp("")).toStrictEqual(false);
+  vt.expect(T.isTOp([])).toStrictEqual(false);
+  vt.expect(T.isTOp({})).toStrictEqual(false);
+});
+
 vt.describe("string", () => {
   const diffWu = new T.DiffWu();
   const applyCompressedOpsForString = new T.ApplyCompressedOpsForString([]);
