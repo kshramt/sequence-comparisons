@@ -60,6 +60,10 @@ export class ApplyCompressedOpsForString {
   get = () => {
     return this.xs.slice(0, this.#nXs).join("");
   };
+  reset = (xs: string[]) => {
+    this.#nXs = xs.length;
+    this.xs = xs;
+  };
 }
 
 /**

@@ -3,6 +3,12 @@ import { fc, test } from "@fast-check/vitest";
 
 import * as T from "./index.js";
 
+vt.test("ApplyCompressedOpsForString.reset", () => {
+  const applyCompressedOpsForString = new T.ApplyCompressedOpsForString([]);
+  applyCompressedOpsForString.reset(["abc"]);
+  vt.expect(applyCompressedOpsForString.get()).toStrictEqual("abc");
+});
+
 test("isTCompressedOp", () => {
   vt.expect(T.isTCompressedOp(-1)).toStrictEqual(true);
   vt.expect(T.isTCompressedOp(0)).toStrictEqual(true);
@@ -81,7 +87,7 @@ vt.describe("string", () => {
             opss.push(T.compressOpsForString(ops, ys));
           }
           const reconstructed = [texts[0]];
-          applyCompressedOpsForString.xs = Array.from(texts[0]);
+          applyCompressedOpsForString.reset(Array.from(texts[0]));
           for (const ops of opss) {
             reconstructed.push(applyCompressedOpsForString.apply(ops).get());
           }
