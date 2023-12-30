@@ -33,7 +33,7 @@ export class ApplyCompressedOpsForString {
     this.xs = xs;
     this.ys = [];
   }
-  apply = (ops: TCompressedOp[]) => {
+  apply = (ops: readonly TCompressedOp[]) => {
     let ix = -1;
     let iy = -1;
     for (const op of ops) {
@@ -73,7 +73,10 @@ export class ApplyCompressedOpsForString {
  * @param ys The final or destination array of strings that was input to the `diffWu` function.
  * @returns A compact array of operations. This array combines strings and numbers. A negative number `n` signifies that the subsequent `-n` elements in `xs` are to be removed. A positive number `n` signifies that the subsequent `n` elements in both `xs` should remain unchanged. A string element denotes that the corresponding element should be inserted into the array.
  */
-export const compressOpsForString = (ops: TOp[], ys: string[]) => {
+export const compressOpsForString = (
+  ops: readonly TOp[],
+  ys: readonly string[],
+) => {
   const res: TCompressedOp[] = [];
   let iy = -1;
   let nDelete = 0;
@@ -138,7 +141,11 @@ export class DiffWu {
    *
    * Please see `diffWu` for more information.
    */
-  call = <T>(xs: T[], ys: T[], isEqual: typeof _isEqual = _isEqual) => {
+  call = <T>(
+    xs: readonly T[],
+    ys: readonly T[],
+    isEqual: typeof _isEqual = _isEqual,
+  ) => {
     const nx = xs.length;
     const ny = ys.length;
     const opsLength = nx + ny + 1;
@@ -181,8 +188,8 @@ export class DiffWu {
  * @returns An array of operations that are needed to convert `xs` into `ys`. The returned array always ends with a `SENTINEL_OP` operation, serving as a marker for the end of operations.
  */
 export const diffWu = <T>(
-  xs: T[],
-  ys: T[],
+  xs: readonly T[],
+  ys: readonly T[],
   isEqual: typeof _isEqual = _isEqual,
 ): TOp[] => {
   const nx = xs.length;
@@ -199,10 +206,10 @@ function _diffWu<T>(
   iop1: number,
   fps: number[],
   bps: number[],
-  xs: T[],
+  xs: readonly T[],
   ix1: number,
   ix2: number,
-  ys: T[],
+  ys: readonly T[],
   iy1: number,
   iy2: number,
   isSwapped: boolean,
@@ -371,10 +378,10 @@ function _diffWu<T>(
 const snakeForward = <T>(
   k: number,
   iy: number,
-  xs: T[],
+  xs: readonly T[],
   ix1: number,
   ix2: number,
-  ys: T[],
+  ys: readonly T[],
   iy1: number,
   iy2: number,
   isEqual: typeof _isEqual,
@@ -390,9 +397,9 @@ const snakeForward = <T>(
 const snakeBackward = <T>(
   k: number,
   iy: number,
-  xs: T[],
+  xs: readonly T[],
   ix1: number,
-  ys: T[],
+  ys: readonly T[],
   iy1: number,
   isEqual: typeof _isEqual,
 ) => {
